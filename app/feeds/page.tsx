@@ -1,49 +1,34 @@
 'use client';
 import { useState, useEffect, FormEvent } from 'react';
-import type { Feed } from '@/lib/feeds';
+import { getFeeds, addFeed, updateFeed, deleteFeed } from '@/lib/feeds-client';
+import type { Feed } from '@/lib/feeds-client';
 
 export default function FeedsPage() {
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editUrl, setEditUrl] = useState('');
-  const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/feeds').then((r) => r.json()).then(setFeeds);
+    setFeeds(getFeeds());
   }, []);
 
-  async function handleAdd(e: FormEvent) {
+  function handleAdd(e: FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !url.trim()) return;
-    setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/feeds', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), url: url.trim() }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error ?? 'Failed to add feed');
-      }
-      const updated = await fetch('/api/feeds').then((r) => r.json());
-      setFeeds(updated);
+      addFeed({ name: name.trim(), url: url.trim() });
+      setFeeds(getFeeds());
       setName('');
       setUrl('');
       setShowAdd(false);
     } catch (e) {
       setError((e as Error).message);
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -54,63 +39,51 @@ export default function FeedsPage() {
     setEditError(null);
   }
 
-  function cancelEdit() {
-    setEditId(null);
-    setEditError(null);
-  }
-
-  async function handleEdit(e: FormEvent) {
+  function handleEdit(e: FormEvent) {
     e.preventDefault();
-    if (!editId || !editName.trim() || !editUrl.trim()) return;
-    setEditSaving(true);
+    if (!editId) return;
     setEditError(null);
     try {
-      const res = await fetch(`/api/feeds?id=${editId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName.trim(), url: editUrl.trim() }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error ?? 'Failed to update feed');
-      }
-      const updated: Feed = await res.json();
-      setFeeds((prev) => prev.map((f) => (f.id === editId ? updated : f)));
+      updateFeed(editId, { name: editName.trim(), url: editUrl.trim() });
+      setFeeds(getFeeds());
       setEditId(null);
     } catch (e) {
       setEditError((e as Error).message);
-    } finally {
-      setEditSaving(false);
     }
   }
 
-  async function handleDelete(id: string) {
-    setDeleteId(id);
-    await fetch(`/api/feeds?id=${id}`, { method: 'DELETE' });
-    setFeeds((prev) => prev.filter((f) => f.id !== id));
-    setDeleteId(null);
+  function handleDelete(id: string) {
+    deleteFeed(id);
+    setFeeds(getFeeds());
   }
 
   return (
     <div className="px-4 pt-5 pb-2">
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-2xl font-bold text-white">Feeds</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1
+          className="text-3xl font-black text-stone-900 tracking-tight"
+          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+        >
+          My Feeds
+        </h1>
         <button
           onClick={() => { setShowAdd((v) => !v); setError(null); }}
-          className="bg-cyan-600 active:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+          className="bg-stone-900 active:bg-stone-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
         >
           {showAdd ? 'Cancel' : '+ Add'}
         </button>
       </div>
 
+      <div className="border-t-4 border-stone-900 border-b border-stone-200 mb-5" />
+
       {showAdd && (
-        <form onSubmit={handleAdd} className="bg-[#0d1829] rounded-2xl p-4 mb-4 flex flex-col gap-3">
+        <form onSubmit={handleAdd} className="bg-white rounded-lg border border-stone-200 p-4 mb-4 flex flex-col gap-3">
           <input
             type="text"
             placeholder="Feed name (e.g. Hacker News)"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bg-slate-800 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full bg-stone-50 text-stone-900 placeholder-stone-400 rounded-lg px-4 py-3 text-base outline-none border border-stone-200 focus:ring-2 focus:ring-red-700 focus:border-transparent"
             required
             autoFocus
           />
@@ -119,27 +92,26 @@ export default function FeedsPage() {
             placeholder="Feed URL (https://…)"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="w-full bg-slate-800 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-cyan-500"
+            className="w-full bg-stone-50 text-stone-900 placeholder-stone-400 rounded-lg px-4 py-3 text-base outline-none border border-stone-200 focus:ring-2 focus:ring-red-700 focus:border-transparent"
             required
           />
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-red-700 text-sm">{error}</p>}
           <button
             type="submit"
-            disabled={submitting}
-            className="bg-cyan-600 active:bg-cyan-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-base transition-colors"
+            className="bg-red-700 active:bg-red-800 text-white py-3 rounded-lg font-semibold text-base transition-colors"
           >
-            {submitting ? 'Adding…' : 'Add Feed'}
+            Add Feed
           </button>
         </form>
       )}
 
       {feeds.length === 0 && !showAdd && (
         <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-16 h-16 text-slate-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-16 h-16 text-stone-300">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7M6 17a1 1 0 110-2 1 1 0 010 2z" />
           </svg>
-          <p className="text-slate-400 text-lg font-medium">No feeds yet</p>
-          <p className="text-slate-500 text-sm">Tap "+ Add" to subscribe to an RSS feed</p>
+          <p className="text-stone-500 text-lg font-medium">No feeds yet</p>
+          <p className="text-stone-400 text-sm">Tap "+ Add" to subscribe to an RSS feed</p>
         </div>
       )}
 
@@ -149,13 +121,13 @@ export default function FeedsPage() {
             <form
               key={feed.id}
               onSubmit={handleEdit}
-              className="bg-[#0d1829] rounded-2xl p-4 flex flex-col gap-3"
+              className="bg-white rounded-lg border border-stone-200 p-4 flex flex-col gap-3"
             >
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full bg-slate-800 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full bg-stone-50 text-stone-900 rounded-lg px-4 py-3 text-base outline-none border border-stone-200 focus:ring-2 focus:ring-red-700 focus:border-transparent"
                 required
                 autoFocus
               />
@@ -163,39 +135,35 @@ export default function FeedsPage() {
                 type="url"
                 value={editUrl}
                 onChange={(e) => setEditUrl(e.target.value)}
-                className="w-full bg-slate-800 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full bg-stone-50 text-stone-900 rounded-lg px-4 py-3 text-base outline-none border border-stone-200 focus:ring-2 focus:ring-red-700 focus:border-transparent"
                 required
               />
-              {editError && <p className="text-red-400 text-sm">{editError}</p>}
+              {editError && <p className="text-red-700 text-sm">{editError}</p>}
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={editSaving}
-                  className="flex-1 bg-cyan-600 active:bg-cyan-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
+                  className="flex-1 bg-stone-900 active:bg-stone-700 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors"
                 >
-                  {editSaving ? 'Saving…' : 'Save'}
+                  Save
                 </button>
                 <button
                   type="button"
-                  onClick={cancelEdit}
-                  className="flex-1 bg-slate-800 active:bg-gray-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
+                  onClick={() => setEditId(null)}
+                  className="flex-1 bg-stone-100 active:bg-stone-200 text-stone-700 py-2.5 rounded-lg font-semibold text-sm transition-colors"
                 >
                   Cancel
                 </button>
               </div>
             </form>
           ) : (
-            <div
-              key={feed.id}
-              className="bg-[#0d1829] rounded-2xl px-4 py-4 flex items-center gap-3"
-            >
+            <div key={feed.id} className="bg-white rounded-lg border border-stone-200 px-4 py-4 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold truncate">{feed.name}</p>
-                <p className="text-slate-500 text-xs truncate mt-0.5">{feed.url}</p>
+                <p className="text-stone-900 font-semibold truncate">{feed.name}</p>
+                <p className="text-stone-400 text-xs truncate mt-0.5">{feed.url}</p>
               </div>
               <button
                 onClick={() => startEdit(feed)}
-                className="p-2 text-slate-500 active:text-cyan-400 transition-colors flex-shrink-0"
+                className="p-2 text-stone-400 active:text-stone-700 transition-colors flex-shrink-0"
                 aria-label="Edit feed"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
@@ -204,8 +172,7 @@ export default function FeedsPage() {
               </button>
               <button
                 onClick={() => handleDelete(feed.id)}
-                disabled={deleteId === feed.id}
-                className="p-2 text-slate-500 active:text-red-400 transition-colors flex-shrink-0 disabled:opacity-40"
+                className="p-2 text-stone-400 active:text-red-700 transition-colors flex-shrink-0"
                 aria-label="Delete feed"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">

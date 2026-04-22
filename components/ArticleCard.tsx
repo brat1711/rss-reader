@@ -15,9 +15,8 @@ function timeAgo(dateStr: string): string {
 
 function readTime(snippet: string): string {
   const words = snippet.trim().split(/\s+/).length;
-  // Assume snippet is ~10% of article; 200 wpm reading speed
   const mins = Math.max(1, Math.round((words / 0.1) / 200));
-  return `${mins} min read`;
+  return `${mins} min`;
 }
 
 const STORAGE_KEY = 'rss_read_ids';
@@ -35,9 +34,7 @@ function markRead(id: string) {
   try {
     const ids = getReadIds();
     ids.add(id);
-    // Cap at 2000 to avoid unbounded growth
-    const arr = Array.from(ids).slice(-2000);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids).slice(-2000)));
   } catch {}
 }
 
@@ -59,38 +56,39 @@ export default function ArticleCard({ article }: { article: Article }) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={handleClick}
-      className={`card-glow block rounded-2xl p-4 mb-3 transition-all min-h-[80px] border ${
+      className={`block rounded-lg p-4 mb-3 border transition-colors ${
         read
-          ? 'bg-[#0a1020] border-slate-800/50 opacity-60'
-          : 'bg-[#0d1829] border-slate-700/40 active:border-cyan-500/30'
+          ? 'bg-stone-50 border-stone-200 opacity-60'
+          : 'bg-white border-stone-200 active:bg-stone-50'
       }`}
     >
-      <div className="flex items-center gap-2 mb-2 font-mono">
-        <span className={`text-xs font-semibold truncate max-w-[140px] ${read ? 'text-slate-500' : 'text-cyan-400'}`}>
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <span className={`text-xs font-bold uppercase tracking-wide ${read ? 'text-stone-400' : 'text-red-700'}`}>
           {article.feedName}
         </span>
-        <span className="text-slate-600 text-xs">·</span>
-        <span className="text-xs text-slate-500 whitespace-nowrap">{timeAgo(article.pubDate)}</span>
+        <span className="text-stone-300 text-xs">·</span>
+        <span className="text-xs text-stone-400">{timeAgo(article.pubDate)}</span>
         {article.snippet && (
           <>
-            <span className="text-slate-600 text-xs">·</span>
-            <span className={`text-xs whitespace-nowrap ${read ? 'text-slate-600' : 'text-emerald-500'}`}>
-              {readTime(article.snippet)}
-            </span>
+            <span className="text-stone-300 text-xs">·</span>
+            <span className="text-xs text-stone-400">{readTime(article.snippet)} read</span>
           </>
         )}
         {article.author && (
           <>
-            <span className="text-slate-600 text-xs">·</span>
-            <span className="text-xs text-slate-500 truncate max-w-[100px]">{article.author}</span>
+            <span className="text-stone-300 text-xs">·</span>
+            <span className="text-xs text-stone-400 truncate max-w-[120px]">{article.author}</span>
           </>
         )}
       </div>
-      <h2 className={`font-semibold text-[15px] leading-snug mb-1 line-clamp-3 ${read ? 'text-slate-400' : 'text-white'}`}>
+      <h2
+        className={`font-bold text-[16px] leading-snug mb-1.5 line-clamp-3 ${read ? 'text-stone-400' : 'text-stone-900'}`}
+        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+      >
         {article.title}
       </h2>
       {article.snippet && (
-        <p className={`text-sm leading-relaxed line-clamp-2 ${read ? 'text-slate-600' : 'text-slate-400'}`}>
+        <p className={`text-sm leading-relaxed line-clamp-2 ${read ? 'text-stone-400' : 'text-stone-600'}`}>
           {article.snippet}
         </p>
       )}
