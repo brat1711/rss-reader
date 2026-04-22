@@ -24,7 +24,7 @@ function stripHtml(html: string): string {
 async function fetchFeedArticles(feed: Feed): Promise<Article[]> {
   try {
     const result = await parser.parseURL(feed.url);
-    return result.items.slice(0, 50).map((item) => ({
+    return result.items.slice(0, 100).map((item) => ({
       id: `${feed.id}::${item.guid ?? item.link ?? item.title ?? Math.random()}`,
       title: item.title ?? 'Untitled',
       link: item.link ?? '',

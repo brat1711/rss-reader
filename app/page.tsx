@@ -3,8 +3,11 @@ import { useState, useEffect, useCallback } from 'react';
 import ArticleCard from '@/components/ArticleCard';
 import type { Article } from '@/lib/rss';
 
+const PAGE_SIZE = 20;
+
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
+  const [visible, setVisible] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,6 +18,7 @@ export default function ArticlesPage() {
       const res = await fetch('/api/articles');
       if (!res.ok) throw new Error(`${res.status}`);
       setArticles(await res.json());
+      setVisible(PAGE_SIZE);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -69,9 +73,18 @@ export default function ArticlesPage() {
         </div>
       )}
 
-      {articles.map((article) => (
+      {articles.slice(0, visible).map((article) => (
         <ArticleCard key={article.id} article={article} />
       ))}
+
+      {visible < articles.length && (
+        <button
+          onClick={() => setVisible((v) => v + PAGE_SIZE)}
+          className="w-full mt-4 mb-2 py-3 rounded-2xl bg-gray-800 text-indigo-400 font-semibold text-sm active:bg-gray-700 transition-colors"
+        >
+          Load more ({articles.length - visible} remaining)
+        </button>
+      )}
     </div>
   );
 }

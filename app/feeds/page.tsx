@@ -10,6 +10,11 @@ export default function FeedsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/feeds').then((r) => r.json()).then(setFeeds);
@@ -39,6 +44,43 @@ export default function FeedsPage() {
       setError((e as Error).message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function startEdit(feed: Feed) {
+    setEditId(feed.id);
+    setEditName(feed.name);
+    setEditUrl(feed.url);
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditId(null);
+    setEditError(null);
+  }
+
+  async function handleEdit(e: FormEvent) {
+    e.preventDefault();
+    if (!editId || !editName.trim() || !editUrl.trim()) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`/api/feeds?id=${editId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName.trim(), url: editUrl.trim() }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error ?? 'Failed to update feed');
+      }
+      const updated: Feed = await res.json();
+      setFeeds((prev) => prev.map((f) => (f.id === editId ? updated : f)));
+      setEditId(null);
+    } catch (e) {
+      setEditError((e as Error).message);
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -102,27 +144,77 @@ export default function FeedsPage() {
       )}
 
       <div className="flex flex-col gap-3">
-        {feeds.map((feed) => (
-          <div
-            key={feed.id}
-            className="bg-gray-800 rounded-2xl px-4 py-4 flex items-center gap-3"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-semibold truncate">{feed.name}</p>
-              <p className="text-gray-500 text-xs truncate mt-0.5">{feed.url}</p>
-            </div>
-            <button
-              onClick={() => handleDelete(feed.id)}
-              disabled={deleteId === feed.id}
-              className="p-2 text-gray-500 active:text-red-400 transition-colors flex-shrink-0 disabled:opacity-40"
-              aria-label="Delete feed"
+        {feeds.map((feed) =>
+          editId === feed.id ? (
+            <form
+              key={feed.id}
+              onSubmit={handleEdit}
+              className="bg-gray-800 rounded-2xl p-4 flex flex-col gap-3"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
-        ))}
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full bg-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+                autoFocus
+              />
+              <input
+                type="url"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+                className="w-full bg-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+              {editError && <p className="text-red-400 text-sm">{editError}</p>}
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="flex-1 bg-indigo-600 active:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
+                >
+                  {editSaving ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="flex-1 bg-gray-700 active:bg-gray-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div
+              key={feed.id}
+              className="bg-gray-800 rounded-2xl px-4 py-4 flex items-center gap-3"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold truncate">{feed.name}</p>
+                <p className="text-gray-500 text-xs truncate mt-0.5">{feed.url}</p>
+              </div>
+              <button
+                onClick={() => startEdit(feed)}
+                className="p-2 text-gray-500 active:text-indigo-400 transition-colors flex-shrink-0"
+                aria-label="Edit feed"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => handleDelete(feed.id)}
+                disabled={deleteId === feed.id}
+                className="p-2 text-gray-500 active:text-red-400 transition-colors flex-shrink-0 disabled:opacity-40"
+                aria-label="Delete feed"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          )
+        )}
       </div>
     </div>
   );

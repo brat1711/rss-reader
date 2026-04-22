@@ -59,3 +59,12 @@ export function addFeed(feed: { name: string; url: string }): Feed {
 export function deleteFeed(id: string): void {
   writeFeeds(readFeeds().filter((f) => f.id !== id));
 }
+
+export function updateFeed(id: string, patch: { name?: string; url?: string }): Feed | null {
+  const feeds = readFeeds();
+  const idx = feeds.findIndex((f) => f.id === id);
+  if (idx === -1) return null;
+  feeds[idx] = { ...feeds[idx], ...patch };
+  writeFeeds(feeds);
+  return feeds[idx];
+}
