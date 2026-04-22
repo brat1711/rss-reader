@@ -97,20 +97,20 @@ export default function FeedsPage() {
         <h1 className="text-2xl font-bold text-white">Feeds</h1>
         <button
           onClick={() => { setShowAdd((v) => !v); setError(null); }}
-          className="bg-indigo-600 active:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+          className="bg-cyan-600 active:bg-cyan-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
         >
           {showAdd ? 'Cancel' : '+ Add'}
         </button>
       </div>
 
       {showAdd && (
-        <form onSubmit={handleAdd} className="bg-gray-800 rounded-2xl p-4 mb-4 flex flex-col gap-3">
+        <form onSubmit={handleAdd} className="bg-[#0d1829] rounded-2xl p-4 mb-4 flex flex-col gap-3">
           <input
             type="text"
             placeholder="Feed name (e.g. Hacker News)"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bg-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-800 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-cyan-500"
             required
             autoFocus
           />
@@ -119,14 +119,14 @@ export default function FeedsPage() {
             placeholder="Feed URL (https://…)"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="w-full bg-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-800 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-cyan-500"
             required
           />
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <button
             type="submit"
             disabled={submitting}
-            className="bg-indigo-600 active:bg-indigo-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-base transition-colors"
+            className="bg-cyan-600 active:bg-cyan-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-base transition-colors"
           >
             {submitting ? 'Adding…' : 'Add Feed'}
           </button>
@@ -135,11 +135,11 @@ export default function FeedsPage() {
 
       {feeds.length === 0 && !showAdd && (
         <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-16 h-16 text-gray-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-16 h-16 text-slate-600">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7M6 17a1 1 0 110-2 1 1 0 010 2z" />
           </svg>
-          <p className="text-gray-400 text-lg font-medium">No feeds yet</p>
-          <p className="text-gray-500 text-sm">Tap "+ Add" to subscribe to an RSS feed</p>
+          <p className="text-slate-400 text-lg font-medium">No feeds yet</p>
+          <p className="text-slate-500 text-sm">Tap "+ Add" to subscribe to an RSS feed</p>
         </div>
       )}
 
@@ -149,13 +149,13 @@ export default function FeedsPage() {
             <form
               key={feed.id}
               onSubmit={handleEdit}
-              className="bg-gray-800 rounded-2xl p-4 flex flex-col gap-3"
+              className="bg-[#0d1829] rounded-2xl p-4 flex flex-col gap-3"
             >
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full bg-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-slate-800 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-cyan-500"
                 required
                 autoFocus
               />
@@ -163,7 +163,7 @@ export default function FeedsPage() {
                 type="url"
                 value={editUrl}
                 onChange={(e) => setEditUrl(e.target.value)}
-                className="w-full bg-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full bg-slate-800 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-cyan-500"
                 required
               />
               {editError && <p className="text-red-400 text-sm">{editError}</p>}
@@ -171,14 +171,14 @@ export default function FeedsPage() {
                 <button
                   type="submit"
                   disabled={editSaving}
-                  className="flex-1 bg-indigo-600 active:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
+                  className="flex-1 bg-cyan-600 active:bg-cyan-700 disabled:opacity-50 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
                 >
                   {editSaving ? 'Saving…' : 'Save'}
                 </button>
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="flex-1 bg-gray-700 active:bg-gray-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
+                  className="flex-1 bg-slate-800 active:bg-gray-600 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
                 >
                   Cancel
                 </button>
@@ -187,15 +187,15 @@ export default function FeedsPage() {
           ) : (
             <div
               key={feed.id}
-              className="bg-gray-800 rounded-2xl px-4 py-4 flex items-center gap-3"
+              className="bg-[#0d1829] rounded-2xl px-4 py-4 flex items-center gap-3"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-white font-semibold truncate">{feed.name}</p>
-                <p className="text-gray-500 text-xs truncate mt-0.5">{feed.url}</p>
+                <p className="text-slate-500 text-xs truncate mt-0.5">{feed.url}</p>
               </div>
               <button
                 onClick={() => startEdit(feed)}
-                className="p-2 text-gray-500 active:text-indigo-400 transition-colors flex-shrink-0"
+                className="p-2 text-slate-500 active:text-cyan-400 transition-colors flex-shrink-0"
                 aria-label="Edit feed"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
@@ -205,7 +205,7 @@ export default function FeedsPage() {
               <button
                 onClick={() => handleDelete(feed.id)}
                 disabled={deleteId === feed.id}
-                className="p-2 text-gray-500 active:text-red-400 transition-colors flex-shrink-0 disabled:opacity-40"
+                className="p-2 text-slate-500 active:text-red-400 transition-colors flex-shrink-0 disabled:opacity-40"
                 aria-label="Delete feed"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">

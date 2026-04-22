@@ -5,7 +5,7 @@
 }
 
 html {
-  background: #111827;
+  background: #070d1a;
 }
 
 body {
@@ -14,4 +14,12 @@ body {
 
 input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.2);
 }

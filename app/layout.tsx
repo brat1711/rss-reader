@@ -26,7 +26,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#6366f1',
+  themeColor: '#06b6d4',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className={`${inter.className} bg-gray-900 text-white`}>
+      <body className={`${inter.className} text-white`} style={{ background: '#070d1a' }}>
         <PWARegister />
         <main className="min-h-screen pb-20 max-w-lg mx-auto">{children}</main>
         <BottomNav />

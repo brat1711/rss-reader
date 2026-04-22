@@ -38,8 +38,8 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gray-950 border-t border-gray-800"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-800/60"
+      style={{ background: '#070d1a', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="flex">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
@@ -48,7 +48,7 @@ export default function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-                active ? 'text-indigo-400' : 'text-gray-500'
+                active ? 'text-cyan-400' : 'text-slate-600'
               }`}
             >
               {tab.icon}
