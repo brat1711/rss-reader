@@ -1,28 +1,29 @@
 'use client';
-import { useState, FormEvent, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-function LoginForm() {
+export default function RegisterPage() {
   const router = useRouter();
-  const params = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (password !== confirm) { setError("Passwords don't match"); return; }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/auth', {
+      const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
       if (!res.ok) throw new Error((await res.json()).error);
-      router.push(params.get('from') ?? '/');
+      router.push('/');
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -37,7 +38,7 @@ function LoginForm() {
           <p className="text-xs font-bold tracking-widest text-stone-400 uppercase mb-2">Your Personal Reader</p>
           <h1 className="text-4xl font-black text-stone-900 leading-tight"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
-            The Daily Feed
+            Create Account
           </h1>
         </div>
 
@@ -48,7 +49,7 @@ function LoginForm() {
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              placeholder="your username"
+              placeholder="choose a username"
               className="w-full bg-white border border-stone-300 text-stone-900 placeholder-stone-400 rounded-lg px-4 py-3 text-base outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent"
               autoFocus required autoComplete="username"
             />
@@ -59,29 +60,36 @@ function LoginForm() {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="at least 6 characters"
               className="w-full bg-white border border-stone-300 text-stone-900 placeholder-stone-400 rounded-lg px-4 py-3 text-base outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent"
-              required autoComplete="current-password"
+              required autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wide text-stone-500 mb-1.5">Confirm Password</label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={e => setConfirm(e.target.value)}
+              placeholder="repeat password"
+              className="w-full bg-white border border-stone-300 text-stone-900 placeholder-stone-400 rounded-lg px-4 py-3 text-base outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent"
+              required autoComplete="new-password"
             />
           </div>
           {error && <p className="text-red-700 text-sm font-medium">{error}</p>}
           <button type="submit" disabled={loading}
             className="w-full bg-stone-900 active:bg-stone-700 disabled:opacity-50 text-white py-3 rounded-lg font-bold text-base transition-colors">
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? 'Creating account…' : 'Create Account'}
           </button>
         </form>
 
         <p className="text-center text-sm text-stone-500 mt-6">
-          No account?{' '}
-          <Link href="/register" className="text-red-700 font-semibold underline">
-            Create one
+          Already have an account?{' '}
+          <Link href="/login" className="text-red-700 font-semibold underline">
+            Sign in
           </Link>
         </p>
       </div>
     </div>
   );
-}
-
-export default function LoginPage() {
-  return <Suspense><LoginForm /></Suspense>;
 }

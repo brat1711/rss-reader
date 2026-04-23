@@ -48,8 +48,8 @@ const tabs = [
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Hide nav on login page
-  if (pathname === '/login') return null;
+  // Hide nav on auth pages
+  if (pathname === '/login' || pathname === '/register') return null;
 
   return (
     <nav

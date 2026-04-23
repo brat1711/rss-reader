@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Edge-compatible optimistic token check (no Node crypto available here)
+// Edge-compatible optimistic check — decodes payload without verifying HMAC
 function isSessionValid(token: string | undefined): boolean {
   if (!token) return false;
-  if (!process.env.APP_PASSWORD) return true; // dev mode — no password set
   try {
-    const decoded = atob(token.replace(/-/g, '+').replace(/_/g, '/'));
-    const ts = parseInt(decoded.split('.')[0]);
+    const payload = token.split('.')[0];
+    const data = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
     const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-    return !isNaN(ts) && Date.now() - ts < THIRTY_DAYS;
+    return typeof data.id === 'string' && typeof data.ts === 'number' && Date.now() - data.ts < THIRTY_DAYS;
   } catch {
     return false;
   }
@@ -18,8 +17,8 @@ function isSessionValid(token: string | undefined): boolean {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always allow login page and auth API
-  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth')) {
+  // Always allow auth routes
+  if (pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/api/auth') || pathname.startsWith('/api/register')) {
     return NextResponse.next();
   }
 
