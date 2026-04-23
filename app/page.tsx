@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import ArticleCard from '@/components/ArticleCard';
 import type { Article } from '@/lib/rss';
-import { getFeeds } from '@/lib/feeds-client';
 
 const PAGE_SIZE = 20;
 
@@ -16,12 +15,7 @@ export default function ArticlesPage() {
     setLoading(true);
     setError(null);
     try {
-      const feeds = getFeeds();
-      const res = await fetch('/api/articles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feeds }),
-      });
+      const res = await fetch('/api/articles');
       if (!res.ok) throw new Error(`${res.status}`);
       setArticles(await res.json());
       setVisible(PAGE_SIZE);
@@ -34,9 +28,7 @@ export default function ArticlesPage() {
 
   useEffect(() => {
     load();
-    // Refresh every 30 minutes while app is open
     const interval = setInterval(load, 30 * 60 * 1000);
-    // Refresh when tab regains focus after being hidden
     const onVisible = () => { if (document.visibilityState === 'visible') load(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible); };
@@ -44,7 +36,7 @@ export default function ArticlesPage() {
 
   return (
     <div className="px-4 pt-5 pb-2">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-2">
         <h1
           className="text-3xl font-black text-stone-900 tracking-tight"
           style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}

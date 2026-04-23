@@ -23,6 +23,17 @@ const tabs = [
     ),
   },
   {
+    href: '/discover',
+    label: 'Discover',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-6 h-6">
+        <circle cx={12} cy={12} r={10} />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20" />
+      </svg>
+    ),
+  },
+  {
     href: '/search',
     label: 'Search',
     icon: (
@@ -37,13 +48,16 @@ const tabs = [
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // Hide nav on login page
+  if (pathname === '/login') return null;
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 bg-stone-50 border-t border-stone-200"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex max-w-lg mx-auto">
-        {tabs.map((tab) => {
+        {tabs.map(tab => {
           const active = pathname === tab.href;
           return (
             <Link

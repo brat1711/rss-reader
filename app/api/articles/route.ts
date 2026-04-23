@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server';
+import { getFeeds } from '@/lib/storage';
 import { fetchAllArticles } from '@/lib/rss';
-import type { Feed } from '@/lib/feeds';
+import { requireAuth } from '@/lib/auth';
 
-export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
-  const { feeds = [], q } = body as { feeds?: Feed[]; q?: string };
+export async function GET(request: Request) {
+  const authErr = requireAuth(request);
+  if (authErr) return authErr;
 
-  if (!feeds.length) return NextResponse.json([]);
-
+  const q = new URL(request.url).searchParams.get('q')?.toLowerCase().trim();
+  const feeds = await getFeeds();
   let articles = await fetchAllArticles(feeds);
 
-  if (q?.trim()) {
-    const lower = q.toLowerCase().trim();
+  if (q) {
     articles = articles.filter(
       (a) =>
-        a.title.toLowerCase().includes(lower) ||
-        a.snippet.toLowerCase().includes(lower) ||
-        a.feedName.toLowerCase().includes(lower),
+        a.title.toLowerCase().includes(q) ||
+        a.snippet.toLowerCase().includes(q) ||
+        a.feedName.toLowerCase().includes(q),
     );
   }
 

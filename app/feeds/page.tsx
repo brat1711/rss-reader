@@ -1,60 +1,79 @@
 'use client';
 import { useState, useEffect, FormEvent } from 'react';
-import { getFeeds, addFeed, updateFeed, deleteFeed } from '@/lib/feeds-client';
-import type { Feed } from '@/lib/feeds-client';
+import { useRouter } from 'next/navigation';
+import type { Feed } from '@/lib/feeds';
 
 export default function FeedsPage() {
+  const router = useRouter();
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editUrl, setEditUrl] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setFeeds(getFeeds());
-  }, []);
+  async function loadFeeds() {
+    const res = await fetch('/api/feeds');
+    if (res.ok) setFeeds(await res.json());
+  }
 
-  function handleAdd(e: FormEvent) {
+  useEffect(() => { loadFeeds(); }, []);
+
+  async function handleAdd(e: FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
     setError(null);
     try {
-      addFeed({ name: name.trim(), url: url.trim() });
-      setFeeds(getFeeds());
-      setName('');
-      setUrl('');
-      setShowAdd(false);
+      const res = await fetch('/api/feeds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), url: url.trim() }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      await loadFeeds();
+      setName(''); setUrl(''); setShowAdd(false);
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  function startEdit(feed: Feed) {
-    setEditId(feed.id);
-    setEditName(feed.name);
-    setEditUrl(feed.url);
-    setEditError(null);
-  }
-
-  function handleEdit(e: FormEvent) {
+  async function handleEdit(e: FormEvent) {
     e.preventDefault();
     if (!editId) return;
+    setEditSaving(true);
     setEditError(null);
     try {
-      updateFeed(editId, { name: editName.trim(), url: editUrl.trim() });
-      setFeeds(getFeeds());
+      const res = await fetch(`/api/feeds?id=${editId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName.trim(), url: editUrl.trim() }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      await loadFeeds();
       setEditId(null);
     } catch (e) {
       setEditError((e as Error).message);
+    } finally {
+      setEditSaving(false);
     }
   }
 
-  function handleDelete(id: string) {
-    deleteFeed(id);
-    setFeeds(getFeeds());
+  async function handleDelete(id: string) {
+    await fetch(`/api/feeds?id=${id}`, { method: 'DELETE' });
+    setFeeds(prev => prev.filter(f => f.id !== id));
+  }
+
+  async function handleLogout() {
+    await fetch('/api/auth', { method: 'DELETE' });
+    router.push('/login');
+    router.refresh();
   }
 
   return (
@@ -66,12 +85,24 @@ export default function FeedsPage() {
         >
           My Feeds
         </h1>
-        <button
-          onClick={() => { setShowAdd((v) => !v); setError(null); }}
-          className="bg-stone-900 active:bg-stone-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-        >
-          {showAdd ? 'Cancel' : '+ Add'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowAdd(v => !v); setError(null); }}
+            className="bg-stone-900 active:bg-stone-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+          >
+            {showAdd ? 'Cancel' : '+ Add'}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="p-2 text-stone-400 active:text-red-700 transition-colors"
+            aria-label="Sign out"
+            title="Sign out"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="border-t-4 border-stone-900 border-b border-stone-200 mb-5" />
@@ -82,25 +113,22 @@ export default function FeedsPage() {
             type="text"
             placeholder="Feed name (e.g. Hacker News)"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             className="w-full bg-stone-50 text-stone-900 placeholder-stone-400 rounded-lg px-4 py-3 text-base outline-none border border-stone-200 focus:ring-2 focus:ring-red-700 focus:border-transparent"
-            required
-            autoFocus
+            required autoFocus
           />
           <input
             type="url"
             placeholder="Feed URL (https://…)"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={e => setUrl(e.target.value)}
             className="w-full bg-stone-50 text-stone-900 placeholder-stone-400 rounded-lg px-4 py-3 text-base outline-none border border-stone-200 focus:ring-2 focus:ring-red-700 focus:border-transparent"
             required
           />
           {error && <p className="text-red-700 text-sm">{error}</p>}
-          <button
-            type="submit"
-            className="bg-red-700 active:bg-red-800 text-white py-3 rounded-lg font-semibold text-base transition-colors"
-          >
-            Add Feed
+          <button type="submit" disabled={submitting}
+            className="bg-red-700 active:bg-red-800 disabled:opacity-50 text-white py-3 rounded-lg font-semibold text-base transition-colors">
+            {submitting ? 'Adding…' : 'Add Feed'}
           </button>
         </form>
       )}
@@ -111,46 +139,29 @@ export default function FeedsPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7M6 17a1 1 0 110-2 1 1 0 010 2z" />
           </svg>
           <p className="text-stone-500 text-lg font-medium">No feeds yet</p>
-          <p className="text-stone-400 text-sm">Tap "+ Add" to subscribe to an RSS feed</p>
+          <p className="text-stone-400 text-sm">Tap "+ Add" or browse Discover</p>
         </div>
       )}
 
       <div className="flex flex-col gap-3">
-        {feeds.map((feed) =>
+        {feeds.map(feed =>
           editId === feed.id ? (
-            <form
-              key={feed.id}
-              onSubmit={handleEdit}
-              className="bg-white rounded-lg border border-stone-200 p-4 flex flex-col gap-3"
-            >
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
+            <form key={feed.id} onSubmit={handleEdit}
+              className="bg-white rounded-lg border border-stone-200 p-4 flex flex-col gap-3">
+              <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
                 className="w-full bg-stone-50 text-stone-900 rounded-lg px-4 py-3 text-base outline-none border border-stone-200 focus:ring-2 focus:ring-red-700 focus:border-transparent"
-                required
-                autoFocus
-              />
-              <input
-                type="url"
-                value={editUrl}
-                onChange={(e) => setEditUrl(e.target.value)}
+                required autoFocus />
+              <input type="url" value={editUrl} onChange={e => setEditUrl(e.target.value)}
                 className="w-full bg-stone-50 text-stone-900 rounded-lg px-4 py-3 text-base outline-none border border-stone-200 focus:ring-2 focus:ring-red-700 focus:border-transparent"
-                required
-              />
+                required />
               {editError && <p className="text-red-700 text-sm">{editError}</p>}
               <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="flex-1 bg-stone-900 active:bg-stone-700 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors"
-                >
-                  Save
+                <button type="submit" disabled={editSaving}
+                  className="flex-1 bg-stone-900 active:bg-stone-700 disabled:opacity-50 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">
+                  {editSaving ? 'Saving…' : 'Save'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setEditId(null)}
-                  className="flex-1 bg-stone-100 active:bg-stone-200 text-stone-700 py-2.5 rounded-lg font-semibold text-sm transition-colors"
-                >
+                <button type="button" onClick={() => setEditId(null)}
+                  className="flex-1 bg-stone-100 active:bg-stone-200 text-stone-700 py-2.5 rounded-lg font-semibold text-sm transition-colors">
                   Cancel
                 </button>
               </div>
@@ -161,20 +172,14 @@ export default function FeedsPage() {
                 <p className="text-stone-900 font-semibold truncate">{feed.name}</p>
                 <p className="text-stone-400 text-xs truncate mt-0.5">{feed.url}</p>
               </div>
-              <button
-                onClick={() => startEdit(feed)}
-                className="p-2 text-stone-400 active:text-stone-700 transition-colors flex-shrink-0"
-                aria-label="Edit feed"
-              >
+              <button onClick={() => { setEditId(feed.id); setEditName(feed.name); setEditUrl(feed.url); setEditError(null); }}
+                className="p-2 text-stone-400 active:text-stone-700 transition-colors flex-shrink-0" aria-label="Edit">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
                 </svg>
               </button>
-              <button
-                onClick={() => handleDelete(feed.id)}
-                className="p-2 text-stone-400 active:text-red-700 transition-colors flex-shrink-0"
-                aria-label="Delete feed"
-              >
+              <button onClick={() => handleDelete(feed.id)}
+                className="p-2 text-stone-400 active:text-red-700 transition-colors flex-shrink-0" aria-label="Delete">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>

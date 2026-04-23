@@ -1,40 +1,53 @@
 import { NextResponse } from 'next/server';
-import { getFeeds, addFeed, deleteFeed, updateFeed } from '@/lib/feeds';
+import { getFeeds, addFeed, updateFeed, deleteFeed } from '@/lib/storage';
+import { requireAuth } from '@/lib/auth';
 
-export async function GET() {
-  return NextResponse.json(getFeeds());
+export async function GET(request: Request) {
+  const authErr = requireAuth(request);
+  if (authErr) return authErr;
+  return NextResponse.json(await getFeeds());
 }
 
 export async function POST(request: Request) {
+  const authErr = requireAuth(request);
+  if (authErr) return authErr;
+
   const body = await request.json().catch(() => ({}));
   const { name, url } = body as { name?: string; url?: string };
-
   if (!name?.trim() || !url?.trim()) {
     return NextResponse.json({ error: 'name and url are required' }, { status: 400 });
   }
-
-  const feed = addFeed({ name: name.trim(), url: url.trim() });
-  return NextResponse.json(feed, { status: 201 });
+  try {
+    const feed = await addFeed({ name: name.trim(), url: url.trim() });
+    return NextResponse.json(feed, { status: 201 });
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+  }
 }
 
 export async function PATCH(request: Request) {
+  const authErr = requireAuth(request);
+  if (authErr) return authErr;
+
   const id = new URL(request.url).searchParams.get('id');
-  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
   const body = await request.json().catch(() => ({}));
   const { name, url } = body as { name?: string; url?: string };
-  if (!name?.trim() && !url?.trim()) {
-    return NextResponse.json({ error: 'name or url required' }, { status: 400 });
+  try {
+    const feed = await updateFeed(id, { name: name?.trim(), url: url?.trim() });
+    return NextResponse.json(feed);
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 404 });
   }
-  const updated = updateFeed(id, { name: name?.trim(), url: url?.trim() });
-  if (!updated) return NextResponse.json({ error: 'not found' }, { status: 404 });
-  return NextResponse.json(updated);
 }
 
 export async function DELETE(request: Request) {
+  const authErr = requireAuth(request);
+  if (authErr) return authErr;
+
   const id = new URL(request.url).searchParams.get('id');
-  if (!id) {
-    return NextResponse.json({ error: 'id is required' }, { status: 400 });
-  }
-  deleteFeed(id);
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+  await deleteFeed(id);
   return NextResponse.json({ ok: true });
 }
